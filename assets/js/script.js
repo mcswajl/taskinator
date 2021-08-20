@@ -8,12 +8,4 @@ var createTaskHandler = function() {
   tasksToDoEl.appendChild(listItemEl);
 };
 
-var h2 = document.createElement("h2");
-h2.textContent = "Welcome";
-h2.setAttribute("style", "text-align: center; margins: auto;");
-/*body.appendChild(h2);*/
-
 buttonEl.addEventListener("click", createTaskHandler);
-
-var buttonEl = document.querySelector("#save-task");
-console.log(buttonEl);
