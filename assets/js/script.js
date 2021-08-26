@@ -1,186 +1,221 @@
-var taskIdCounter = 0;
+// HTML elements 
+var quizBody = document.getElementById("quiz");
+var resultsEl = document.getElementById("result");
+var finalScoreEl = document.getElementById("finalScore");
+var gameoverDiv = document.getElementById("gameover");
+var questionsEl = document.getElementById("questions");
+var quizTimer = document.getElementById("timer");
+var startQuizButton = document.getElementById("startbtn");
+var startQuizDiv = document.getElementById("startpage");
+var highscoreContainer = document.getElementById("highscoreContainer");
+var highscoreDiv = document.getElementById("high-scorePage");
+var highscoreInputName = document.getElementById("initials");
+var highscoreDisplayName = document.getElementById("highscore-initials");
+var endGameBtns = document.getElementById("endGameBtns");
+var submitScoreBtn = document.getElementById("submitScore");
+var highscoreDisplayScore = document.getElementById("highscore-score");
 
-var formEl = document.querySelector("#task-form");
-var tasksToDoEl = document.querySelector("#tasks-to-do");
-var tasksInProgressEl = document.querySelector("#tasks-in-progress");
-var tasksCompletedEl = document.querySelector("#tasks-completed");
-var pageContentEl = document.querySelector("#page-content");
+// Buttons
+var buttonA = document.getElementById("a");
+var buttonB = document.getElementById("b");
+var buttonC = document.getElementById("c");
+var buttonD = document.getElementById("d");
 
-var taskFormHandler = function(event) {
-  event.preventDefault();
-  var taskNameInput = document.querySelector("input[name='task-name']").value;
-  var taskTypeInput = document.querySelector("select[name='task-type']").value;
+// Quiz questions
+var quizQuestions = [{
+    question: "How many counties in NC?",
+    choiceA: "47",
+    choiceB: "67",
+    choiceC: "100",
+    choiceD: "39",
+    correctAnswer: "c"},
+  {
+    question: "Most populated county in NC?",
+    choiceA: "Anson",
+    choiceB: "Mecklenburg",
+    choiceC: "Wake",
+    choiceD: "Buncombe",
+    correctAnswer: "c"},
+   {
+    question: "Largest NC county by area?",
+    choiceA: "Davidson",
+    choiceB: "Sampson",
+    choiceC: "Dare",
+    choiceD: "Columbus",
+    correctAnswer: "c"},
+    {
+    question: "NC County with the highest elevation?",
+    choiceA: "Burke",
+    choiceB: "Yancey",
+    choiceC: "Mitchell",
+    choiceD: "Wilkes",
+    correctAnswer: "c"},
+    {
+    question: "Smallest NC county by area?",
+    choiceA: "Brunswick",
+    choiceB: "Carteret",
+    choiceC: "Hyde",
+    choiceD: "Mecklenburg",
+    correctAnswer: "c"},  
+    {
+    question: "City of Charlotte is in which NC county?",
+    choiceA: "Gaston",
+    choiceB: "Iredell",
+    choiceC: "Mecklenburg",
+    choiceD: "Union",
+    correctAnswer: "c"},
+    {
+    question: "Which NC county is the capital in?",
+    choiceA: "Durham",
+    choiceB: "Mecklenburg",
+    choiceC: "Wake",
+    choiceD: "Catawba",
+    correctAnswer: "c"},
+         
+    ];
 
-  // check if inputs are empty (validate)
-  if (taskNameInput === "" || taskTypeInput === "") {
-    alert("You need to fill out the task form!");
-    return false;
-  }
+// Other variables
+var finalQuestionIndex = quizQuestions.length;
+var currentQuestionIndex = 0;
+var timeLeft = 120;
+var timerInterval;
+var score = 0;
+var correct;
 
-  // reset form fields for next task to be entered
-  document.querySelector("input[name='task-name']").value = "";
-  document.querySelector("select[name='task-type']").selectedIndex = 0;
-
-  // check if task is new or one being edited by seeing if it has a data-task-id attribute
-  var isEdit = formEl.hasAttribute("data-task-id");
-
-  if (isEdit) {
-    var taskId = formEl.getAttribute("data-task-id");
-    completeEditTask(taskNameInput, taskTypeInput, taskId);
-  } else {
-    var taskDataObj = {
-      name: taskNameInput,
-      type: taskTypeInput
-    };
-
-    createTaskEl(taskDataObj);
-  }
+// Function goes through the object array to generate the questions and answers.
+function generateQuizQuestion(){
+    gameoverDiv.style.display = "none";
+    if (currentQuestionIndex === finalQuestionIndex){
+        return showScore();
+    } 
+    var currentQuestion = quizQuestions[currentQuestionIndex];
+    questionsEl.innerHTML = "<p>" + currentQuestion.question + "</p>";
+    buttonA.innerHTML = currentQuestion.choiceA;
+    buttonB.innerHTML = currentQuestion.choiceB;
+    buttonC.innerHTML = currentQuestion.choiceC;
+    buttonD.innerHTML = currentQuestion.choiceD;
 };
 
-var createTaskEl = function(taskDataObj) {
-  var listItemEl = document.createElement("li");
-  listItemEl.className = "task-item";
-  listItemEl.setAttribute("data-task-id", taskIdCounter);
+// Function starts the TimeRanges, hides button then displays the first quiz question.
+function startQuiz(){
+    gameoverDiv.style.display = "none";
+    startQuizDiv.style.display = "none";
+    generateQuizQuestion();
 
-  var taskInfoEl = document.createElement("div");
-  taskInfoEl.className = "task-info";
-  taskInfoEl.innerHTML = "<h3 class='task-name'>" + taskDataObj.name + "</h3><span class='task-type'>" + taskDataObj.type + "</span>";
-  listItemEl.appendChild(taskInfoEl);
+    //Timer
+    timerInterval = setInterval(function() {
+        timeLeft--;
+        quizTimer.textContent = "Time left: " + timeLeft;
+    
+        if(timeLeft === 0) {
+          clearInterval(timerInterval);
+          showScore();
+        }
+      }, 1000);
+    quizBody.style.display = "inline";
+}
+// Function is end page screen that shows your score after either finishing the question or you ran out of time
+function showScore(){
+    quizBody.style.display = "none"
+    gameoverDiv.style.display = "flex";
+    clearInterval(timerInterval);
+    highscoreInputName.value = "";
+    finalScoreEl.innerHTML = "You got " + score + " out of " + quizQuestions.length + " correct!";
+}
 
-  // create task actions (buttons and select) for task
-  var taskActionsEl = createTaskActions(taskIdCounter);
-  listItemEl.appendChild(taskActionsEl);
-  tasksToDoEl.appendChild(listItemEl);
+// On click of the submit button, we run the function highscore that saves and stringifies the array of high scores already saved in local stoage
+// as well as pushing the new user name and score into the array we are saving in local storage. Then it runs the function to show high scores.
+submitScoreBtn.addEventListener("click", function highscore(){
+    
+    
+    if(highscoreInputName.value === "") {
+        alert("Initials cannot be blank");
+        return false;
+    }else{
+        var savedHighscores = JSON.parse(localStorage.getItem("savedHighscores")) || [];
+        var currentUser = highscoreInputName.value.trim();
+        var currentHighscore = {
+            name : currentUser,
+            score : score
+        };
+    
+        gameoverDiv.style.display = "none";
+        highscoreContainer.style.display = "flex";
+        highscoreDiv.style.display = "block";
+        endGameBtns.style.display = "flex";
+        
+        savedHighscores.push(currentHighscore);
+        localStorage.setItem("savedHighscores", JSON.stringify(savedHighscores));
+        generateHighscores();
 
-  // increase task counter for next unique id
-  taskIdCounter++;
-};
+    }
+    
+});
 
-var createTaskActions = function(taskId) {
-  // create container to hold elements
-  var actionContainerEl = document.createElement("div");
-  actionContainerEl.className = "task-actions";
+// This function clears the list for the high scores and generates a new high score list from local storage
+function generateHighscores(){
+    highscoreDisplayName.innerHTML = "";
+    highscoreDisplayScore.innerHTML = "";
+    var highscores = JSON.parse(localStorage.getItem("savedHighscores")) || [];
+    for (i=0; i<highscores.length; i++){
+        var newNameSpan = document.createElement("li");
+        var newScoreSpan = document.createElement("li");
+        newNameSpan.textContent = highscores[i].name;
+        newScoreSpan.textContent = highscores[i].score;
+        highscoreDisplayName.appendChild(newNameSpan);
+        highscoreDisplayScore.appendChild(newScoreSpan);
+    }
+}
 
-  // create edit button
-  var editButtonEl = document.createElement("button");
-  editButtonEl.textContent = "Edit";
-  editButtonEl.className = "btn edit-btn";
-  editButtonEl.setAttribute("data-task-id", taskId);
-  actionContainerEl.appendChild(editButtonEl);
-  // create delete button
-  var deleteButtonEl = document.createElement("button");
-  deleteButtonEl.textContent = "Delete";
-  deleteButtonEl.className = "btn delete-btn";
-  deleteButtonEl.setAttribute("data-task-id", taskId);
-  actionContainerEl.appendChild(deleteButtonEl);
-  // create change status dropdown
-  var statusSelectEl = document.createElement("select");
-  statusSelectEl.setAttribute("name", "status-change");
-  statusSelectEl.setAttribute("data-task-id", taskId);
-  statusSelectEl.className = "select-status";
-  actionContainerEl.appendChild(statusSelectEl);
-  // create status options
-  var statusChoices = ["To Do", "In Progress", "Completed"];
+// This function displays the high scores page while hiding all of the other pages from 
+function showHighscore(){
+    startQuizDiv.style.display = "none"
+    gameoverDiv.style.display = "none";
+    highscoreContainer.style.display = "flex";
+    highscoreDiv.style.display = "block";
+    endGameBtns.style.display = "flex";
 
-  for (var i = 0; i < statusChoices.length; i++) {
-    // create option element
-    var statusOptionEl = document.createElement("option");
-    statusOptionEl.setAttribute("value", statusChoices[i]);
-    statusOptionEl.textContent = statusChoices[i];
+    generateHighscores();
+}
 
-    // append to select
-    statusSelectEl.appendChild(statusOptionEl);
-  }
+// This function clears the local storage of the high scores as well as clearing the text from the high score board
+function clearScore(){
+    window.localStorage.clear();
+    highscoreDisplayName.textContent = "";
+    highscoreDisplayScore.textContent = "";
+}
 
-  return actionContainerEl;
-};
+// This function sets all the variables back to their original values and shows the home page to enable replay of the quiz
+function replayQuiz(){
+    highscoreContainer.style.display = "none";
+    gameoverDiv.style.display = "none";
+    startQuizDiv.style.display = "flex";
+    timeLeft = 120;
+    score = 0;
+    currentQuestionIndex = 0;
+}
 
-var completeEditTask = function(taskName, taskType, taskId) {
-  // find task list item with taskId value
-  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+// This function checks the response to each answer 
+function checkAnswer(answer){
+    correct = quizQuestions[currentQuestionIndex].correctAnswer;
 
-  // set new values
-  taskSelected.querySelector("h3.task-name").textContent = taskName;
-  taskSelected.querySelector("span.task-type").textContent = taskType;
+    if (answer === correct && currentQuestionIndex !== finalQuestionIndex){
+        score++;
+        alert("That Is Correct!");
+        currentQuestionIndex++;
+        generateQuizQuestion();
+        //display in the results div that the answer is correct.
+    }else if (answer !== correct && currentQuestionIndex !== finalQuestionIndex){
+        var quizTimer = timeLeft -=20;
+        alert("That Is Incorrect.")
+        currentQuestionIndex++;
+        generateQuizQuestion();
 
-  alert("Task Updated!");
+       //display in the results div that the answer is wrong.
+    }else{
+        showScore();
+    }
+}
 
-  // remove data attribute from form
-  formEl.removeAttribute("data-task-id");
-  // update formEl button to go back to saying "Add Task" instead of "Edit Task"
-  formEl.querySelector("#save-task").textContent = "Add Task";
-};
-
-var taskButtonHandler = function(event) {
-  // get target element from event
-  var targetEl = event.target;
-
-  if (targetEl.matches(".edit-btn")) {
-    console.log("edit", targetEl);
-    var taskId = targetEl.getAttribute("data-task-id");
-    editTask(taskId);
-  } else if (targetEl.matches(".delete-btn")) {
-    console.log("delete", targetEl);
-    var taskId = targetEl.getAttribute("data-task-id");
-    deleteTask(taskId);
-  }
-};
-
-var taskStatusChangeHandler = function(event) {
-  console.log(event.target.value);
-
-  // find task list item based on event.target's data-task-id attribute
-  var taskId = event.target.getAttribute("data-task-id");
-
-  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
-
-  // convert value to lower case
-  var statusValue = event.target.value.toLowerCase();
-
-  if (statusValue === "to do") {
-    tasksToDoEl.appendChild(taskSelected);
-  } else if (statusValue === "in progress") {
-    tasksInProgressEl.appendChild(taskSelected);
-  } else if (statusValue === "completed") {
-    tasksCompletedEl.appendChild(taskSelected);
-  }
-};
-
-var editTask = function(taskId) {
-  console.log(taskId);
-
-  // get task list item element
-  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
-
-  // get content from task name and type
-  var taskName = taskSelected.querySelector("h3.task-name").textContent;
-  console.log(taskName);
-
-  var taskType = taskSelected.querySelector("span.task-type").textContent;
-  console.log(taskType);
-
-  // write values of taskname and taskType to form to be edited
-  document.querySelector("input[name='task-name']").value = taskName;
-  document.querySelector("select[name='task-type']").value = taskType;
-
-  // set data attribute to the form with a value of the task's id so it knows which one is being edited
-  formEl.setAttribute("data-task-id", taskId);
-  // update form's button to reflect editing a task rather than creating a new one
-  formEl.querySelector("#save-task").textContent = "Save Task";
-};
-
-var deleteTask = function(taskId) {
-  console.log(taskId);
-  // find task list element with taskId value and remove it
-  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
-  taskSelected.remove();
-};
-
-// Create a new task
-formEl.addEventListener("submit", taskFormHandler);
-
-// for edit and delete buttons
-pageContentEl.addEventListener("click", taskButtonHandler);
-
-// for changing the status
-pageContentEl.addEventListener("change", taskStatusChangeHandler);
+// This button starts the quiz!
+startQuizButton.addEventListener("click",startQuiz);
